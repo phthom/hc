@@ -1,2 +1,8 @@
-# hc
-IBM Hybrid Cloud Workshop (includes both IBM Cloud Public and Private labs). Based on March 2020 versions (OCP and IBM Cloud). Difficulty : Beginners.
+# IBM Hybrid Cloud Workshop
+
+![image-20190604112317181](images/image-20190604112317181-9640197.png)
+
+---
+
+---
+
