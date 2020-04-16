@@ -24,11 +24,23 @@ The application consists of a web front end, Redis master for storage, and repli
 
 ### Prerequisites
 
-This lab assumes that you have OCP installed and configured.
+This lab assumes that you have OpenShift installed and configured.
 
-First run the following command to connect to your OCP instance :
+First run the following command to connect to your OpenShift instance (see in previous lab how to get access to OpenShift) :
 
-`oc login -u labuser<xx> -p <password> -n default`
+```
+oc login --token=<token> --server=https://c107-e.us-south.containers.cloud.ibm.com:30322
+```
+
+```
+oc project labproj<xx>
+```
+
+```
+oc status
+```
+
+
 
 Go to your home directory : 
 
@@ -37,6 +49,38 @@ Go to your home directory :
 Then Clone the ICPGuestbook git repo : 
 
 `git clone https://github.com/fdescollonges/ICPGuestbook.git`
+
+Go to the directory
+
+```
+cd ICPGuestbook
+```
+
+List the directory
+
+```bash
+# ls
+total 176
+drwxr-xr-x   15 phil  staff    480 Apr 16 22:45 .
+drwx------  119 phil  staff   3808 Apr 16 22:45 ..
+drwxr-xr-x   13 phil  staff    416 Apr 16 22:45 .git
+-rw-r--r--    1 phil  staff  13056 Apr 16 22:45 README.md
+drwxr-xr-x    5 phil  staff    160 Apr 16 22:45 analyzer
+-rw-r--r--    1 phil  staff   1096 Apr 16 22:45 analyzer-deployment.yaml
+-rw-r--r--    1 phil  staff    435 Apr 16 22:45 analyzer-service.yaml
+drwxr-xr-x    7 phil  staff    224 Apr 16 22:45 guestbook
+-rw-r--r--    1 phil  staff    512 Apr 16 22:45 guestbook-deployment.yaml
+-rw-r--r--    1 phil  staff  40028 Apr 16 22:45 guestbook-page.png
+-rw-r--r--    1 phil  staff    436 Apr 16 22:45 guestbook-service.yaml
+-rw-r--r--    1 phil  staff    432 Apr 16 22:45 redis-master-deployment.yaml
+-rw-r--r--    1 phil  staff    205 Apr 16 22:45 redis-master-service.yaml
+-rw-r--r--    1 phil  staff    446 Apr 16 22:45 redis-slave-deployment.yaml
+-rw-r--r--    1 phil  staff    202 Apr 16 22:45 redis-slave-service.yaml
+```
+
+
+
+
 
 ### Create the Redis master pod
 
@@ -88,7 +132,6 @@ Services find the pods to load balance based on pod labels. The pod that you cre
     ```bash
     root@iccws101:~/ICPGuestbook# kubectl get services
     NAME           TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
-    kubernetes     ClusterIP   10.0.0.1      <none>        443/TCP    47h
     redis-master   ClusterIP   10.0.14.216   <none>        6379/TCP   99s
     
     ```
@@ -102,99 +145,44 @@ The Redis master we created earlier is a single pod (REPLICAS = 1), while the Re
 
 1. Use the file [redis-slave-deployment.yaml](redis-slave-deployment.yaml) to create the deployment by running the `kubectl apply -f` *`filename`* command:
 
+2. Execute  `kubectl apply -f redis-slave-deployment.yaml` to create the Redis slave deployment.
+
     ```bash
     root@iccws101:~/ICPGuestbook# kubectl apply -f redis-slave-deployment.yaml
-    Error from server (InternalError): error when creating "redis-slave-deployment.yaml": Internal error occurred: admission webhook "trust.hooks.securityenforcement.admission.cloud.ibm.com" denied the request:
-    Deny "docker.io/kubernetes/redis-slave:v2", no matching repositories in ClusterImagePolicy and no ImagePolicies in the "default" namespace
+    deployment.apps/redis-slave created
     ```
 
-    With ICP, you can restrict the repositories from which your developpers can pull base images. In order to make Redis slaves to run, we have to add several repository to the image policies.
-
-2. Create a ImagePolicy file : 
-
-    `nano guestbook-imagepolicy.yaml`
-
-```yaml
-apiVersion: securityenforcement.admission.cloud.ibm.com/v1beta1
-kind: ImagePolicy
-metadata:
-  generation: 1
-  name: guestbookimagepolicy
-  namespace: default
-  resourceVersion: "218506"
-  selfLink: /apis/securityenforcement.admission.cloud.ibm.com/v1beta1/namespaces/guestbook/imagepolicies/guestbookimagepolicy
-  uid: df3fd7f3-4a46-11e9-969c-06f6c97769e8
-spec:
-  repositories:
-  - name: docker.io/*
-    policy:
-      va:
-        enabled: false
-  - name: docker.io/kubernetes/*
-    policy:
-      va:
-        enabled: false
-  - name: docker.io/ibmcom/*
-    policy:
-      va:
-        enabled: false
-  - name: mycluster.icp:8500/guestbook/*
-    policy:
-      va:
-        enabled: false
-```
-
-​	Hit `ctrl-o`, `Enter` then `ctrl-x` to save the file
-
-​	Apply this file :
-
-​	`kubectl apply -f guestbook-imagepolicy.yaml`
+3. To verify that the redis-slave deployment is running, run the `kubectl get deployment` command:
 
 ```bash
-root@iccws101:~/ICPGuestbook# kubectl apply -f guestbook-imagepolicy.yaml
-imagepolicy.securityenforcement.admission.cloud.ibm.com/guestbookimagepolicy created
+root@iccws101:~/ICPGuestbook# kubectl get deployment
+NAME           DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+redis-master   1         1         1            1           21m
+redis-slave    2         2         2            2           5m24s
+
 ```
 
-Re execute  `kubectl apply -f redis-slave-deployment.yaml` to create the Redis slave deployment.
+Result: The deployment creates and configures the Redis slave pods through the redis-master service (name:port pair, in our example that's `redis-master:6379`).
+
+Example:
+The Redis slaves get started by the deployment with the following command:
+
+```console
+redis-server --slaveof redis-master 6379
+```
+
+4. To verify that the Redis master and slaves pods are running, run the `kubectl get pods` command:
 
 ```bash
-root@iccws101:~/ICPGuestbook# kubectl apply -f redis-slave-deployment.yaml
-deployment.apps/redis-slave created
+root@iccws101:~/ICPGuestbook# kubectl get pods
+NAME                            READY   STATUS    RESTARTS   AGE
+redis-master-7b5cc58fc8-phhdh   1/1     Running   0          21m
+redis-slave-5db5dcfdfd-2mx4j    1/1     Running   0          5m48s
+redis-slave-5db5dcfdfd-q6gfz    1/1     Running   0          5m48s
+
 ```
 
-
-
-1. To verify that the redis-slave deployment is running, run the `kubectl get deployment` command:
-
-    ```bash
-    root@iccws101:~/ICPGuestbook# kubectl get deployment
-    NAME           DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-    redis-master   1         1         1            1           21m
-    redis-slave    2         2         2            2           5m24s
-    
-    ```
-
-    Result: The deployment creates and configures the Redis slave pods through the redis-master service (name:port pair, in our example that's `redis-master:6379`).
-
-    Example:
-    The Redis slaves get started by the deployment with the following command:
-
-    ```console
-    redis-server --slaveof redis-master 6379
-    ```
-
-2. To verify that the Redis master and slaves pods are running, run the `kubectl get pods` command:
-
-    ```bash
-    root@iccws101:~/ICPGuestbook# kubectl get pods
-    NAME                            READY   STATUS    RESTARTS   AGE
-    redis-master-7b5cc58fc8-phhdh   1/1     Running   0          21m
-    redis-slave-5db5dcfdfd-2mx4j    1/1     Running   0          5m48s
-    redis-slave-5db5dcfdfd-q6gfz    1/1     Running   0          5m48s
-    
-    ```
-
-    Result: You see the single Redis master and two Redis slave pods.
+Result: You see the single Redis master and two Redis slave pods.
 
 ### Create the Redis slave service
 
@@ -212,7 +200,6 @@ Just like the master, we want to have a service to proxy connections to the read
     ```bash
     root@iccws101:~/ICPGuestbook# kubectl get services
     NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-    kubernetes     ClusterIP   10.0.0.1       <none>        443/TCP    47h
     redis-master   ClusterIP   10.0.14.216    <none>        6379/TCP   24m
     redis-slave    ClusterIP   10.0.186.203   <none>        6379/TCP   42s
     ```
@@ -276,9 +263,7 @@ Just like the others, we create a service to group the guestbook pods but this t
     ```bash
     root@iccws101:~/ICPGuestbook#  kubectl get services
     NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
-    analyzer       ClusterIP   10.0.37.73     <none>        80/TCP         2m44s
     guestbook      NodePort    10.0.228.206   <none>        80:32175/TCP   2m44s
-    kubernetes     ClusterIP   10.0.0.1       <none>        443/TCP        2d23h
     redis-master   ClusterIP   10.0.251.59    <none>        6379/TCP       2m44s
     redis-slave    ClusterIP   10.0.22.228    <none>        6379/TCP       2m43s
     
@@ -290,7 +275,7 @@ Just like the others, we create a service to group the guestbook pods but this t
 
 Watson Tone Analyzer detects the tone from the words that users enter into the Guestbook app. The tone is converted to the corresponding emoticons.
 
-1. If not done in previous lab, install the IBM Cloud (ibmcloud) [command line interface](https://console.bluemix.net/docs/cli/reference/bluemix_cli/get_started.html#getting-started) to access IBM Cloud public on your virtual server :
+1. **If not done in previous lab**, install the IBM Cloud (ibmcloud) [command line interface](https://console.bluemix.net/docs/cli/reference/bluemix_cli/get_started.html#getting-started) to access IBM Cloud public on your virtual server :
 
       `curl -sL https://ibm.biz/idt-installer | bash`
 
@@ -415,13 +400,15 @@ VCAP_SERVICES_TONE_ANALYZER_SERVICE_API=YOUR_URL
 root@iccws101:~/ICPGuestbook# kubectl create configmap env-ibmcloud-configmap --from-env-file=ibmcloud.env
 configmap/env-ibmcloud-configmap created
   ```
-3. Go in IBM Cloud Private console to see the Secrets and ConfigMaps that has been created
+3. Go inOpenShift  console to see the Secrets and ConfigMaps that has been created
 
-     ![1553857179051](images/1553857179051.png)
+     ![image-20200416230757204](images/image-20200416230757204-7071277.png)
 
-  ![1553857261708](images/1553857261708.png)
+And the configmap:
 
-  ![1553858138718](images/1553858138718.png)
+![image-20200416230842926](images/image-20200416230842926-7071323.png)
+
+
 
 4. Deploy the analyzer application to ICP
 
@@ -520,17 +507,25 @@ VCAP_SERVICES_TONE_ANALYZER_SERVICE_API=https://gateway.watsonplatform.net/tone-
 
 You can now play with the guestbook that you just created by opening it in a browser.
 
-1. Open ICP Console : `https://<<ipaddress>:8443/console/welcome`
+1. Open OpenShift Console
 
 2. Open Deployments : 
 
-   ![1553847844339](images/1553847844339.png)
+   ![image-20200416231240343](images/image-20200416231240343-7071560.png)
 
-3. Click `Launch` at the end of the guestbook-v2 line : 
+   Open services 
 
-4. ![1553848106739](images/1553848106739.png)
+   ![image-20200416231854879](images/image-20200416231854879-7071934.png)
 
-![1553847697367](images/1553847697367.png)
+3. Get the node port (for example in our case : 30667)
+
+4. Use the following URL : http://niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud:<node port>
+
+5. In our example : http://niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud:30667
+
+![image-20200416232553618](images/image-20200416232553618-7072353.png)
+
+
 
 **Congratulations : The guestbook displays in your browser**
 
