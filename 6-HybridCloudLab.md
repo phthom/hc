@@ -517,11 +517,27 @@ You can now play with the guestbook that you just created by opening it in a bro
 
    ![image-20200416231854879](images/image-20200416231854879-7071934.png)
 
-3. Get the node port (for example in our case : 30667)
+3. Create a route to access that application:
 
-4. Use the following URL : http://niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud:<node port>
+   ``` bash
+   # oc expose svc/guestbook
+   route.route.openshift.io/guestbook exposed
+   ```
 
-5. In our example : http://niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud:30667
+   And get the route URL
+
+   ```bash
+   # oc get route
+   NAME        HOST/PORT                                                                                              PATH      SERVICES    PORT      TERMINATION   WILDCARD
+   guestbook   guestbook-labproj07.niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud             guestbook   http                    None
+   ```
+
+4. In our example :  
+
+   ```http
+   http://guestbook-labproj07.niceam-ba36b2ed0b6b09dbc627b56ceec2f2a4-0000.us-south.containers.appdomain.cloud
+   ```
+
 
 ![image-20200416232553618](images/image-20200416232553618-7072353.png)
 
