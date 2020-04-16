@@ -24,28 +24,27 @@ So before you can start any labs, you should have satisfied the following prereq
 
 - [ ] Sign up to the **IBM Cloud** 
 
-> If you don't have a valid email address or if you don't want to use your personal or professional email address, then you can use a temporary email at  https://temp-mail.org/en/
 
-This web site will give you a temporary email address for 10 minutes :
+If you don't have a valid email address or if you don't want to use your personal or professional email address, please create an email account on GMAIL for instance. Don't use any temporary email.
 
-![image-20190118103132743](images/image-20190118103132743-7803892.png)
 
-From that screen,  you can use this temporaty email address (cugebezaza@utooemail.com for example) for the time to register to the IBM Cloud. 
 
 ### Sign in to IBM Cloud
 If you don't have already registered to **IBM Cloud**,  
-Open this link  [IBM Cloud](https://cloud.ibm.com/) or type https://cloud.ibm.com/ in your favorite internet browser.
+Open this link in your favorite internet browser.
 
+<https://cloud.ibm.com/registration?target=https://cloud.ibm.com/docs>
 
-![image-20190118101459166](images/image-20190118101459166-7802899.png)
+![image-20200403135147246](images/image-20200403135147246-5914707.png)
 
 ### Fill in the form
+
 Specify last name, first name, country, phone number and password.
 > By **default**, all new people that register to IBM Cloud will have an **Lite Account** with **no time restriction**. This is not a 30 day trial account. 
 
 Click on **Create Account** button.
 
-![image-20190118103712268](images/image-20190118103712268-7804232.png) 
+ ![image-20200403134700824](images/image-20200403134700824-5914420.png)
 
 
 Then if everything is fine, you will receive the following page:
@@ -56,19 +55,17 @@ Then if everything is fine, you will receive the following page:
 ### Confirm your registration to IBM Cloud from your inbox
 From your email application , you should have received an email from the IBM Cloud:
 
-![image-20190118103917487](images/image-20190118103917487-7804357.png)
+![image-20200403135247288](images/image-20200403135247288-5914767.png)
 
-Click on the link to confirm the account:
-
-![image-20190118104115473](images/image-20190118104115473-7804475.png)
+Click on the link to confirm the account.
 
 Log in to IBM Cloud with your credentials :
 
-![Success Sign up](./images/a005.png)
+![image-20200403135517371](images/image-20200403135517371-5914917.png)
 
 Then type your password and click **Continue**
 
-![image-20190118104305743](images/image-20190118104305743-7804585.png)
+![image-20200403135410035](images/image-20200403135410035-5914850.png)
 
 Type your password and click Login button:
 
