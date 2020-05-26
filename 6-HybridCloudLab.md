@@ -2,11 +2,15 @@
 
 ## Guestbook Hybrid Deployment
 
-This example shows how to build a simple hybrid multi-tier web application using ICP and IBM Cloud services. 
+This example shows how to build a simple hybrid multi-tier web application using OCP and IBM Cloud services. 
 
 The application consists of a web front end, Redis master for storage, and replicated set of Redis slaves, all for which we will create Kubernetes deployments, pods, and services and an sentiment analyzer service which is connected to IBM Watson Tone Analyzer service on IBM Cloud
 
+
+
 ![1553853175594](images/1553853175594.png)
+
+
 
 ##### Table of Contents
 
@@ -24,12 +28,34 @@ The application consists of a web front end, Redis master for storage, and repli
 
 ### Prerequisites
 
-This lab assumes that you have OpenShift installed and configured.
+IMPORTANT : In this lab, you need to have an **IBM Cloud account** - see this link in this **task1** for creating a free IBM account: 
+
+```http
+https://github.com/phthom/hc/blob/master/1-PrepareLab.md
+```
+
+
+
+IMPORTANT : Also install the IBM Cloud (**ibmcloud**) [command line interface](<https://cloud.ibm.com/docs/cli?topic=cli-getting-started>) to access IBM Cloud public from your laptop:
+
+For Linux or MacOS:
+
+`curl -sL https://ibm.biz/idt-installer | bash` 
+
+or for Windows 10, use that command as Administrator:
+
+```windows
+[Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls11, Tls, Ssl3"; iex(New-Object Net.WebClient).DownloadString('https://ibm.biz/idt-win-installer')
+```
+
+
+
+This lab assumes also that you have **OpenShift installed** and configured.
 
 First run the following command to connect to your OpenShift instance (see in previous lab how to get access to OpenShift) :
 
 ```
-oc login --token=<token> --server=https://c107-e.us-south.containers.cloud.ibm.com:30322
+oc login --token=<token> --server=<server>
 ```
 
 ```
@@ -40,13 +66,15 @@ oc project labproj<xx>
 oc status
 ```
 
+Be sure that you are on project labproj<xx>.
 
 
-Go to your home directory : 
+
+Go to your home **directory** : 
 
 `cd`
 
-Then Clone the ICPGuestbook git repo : 
+Then **Clone** the ICPGuestbook git repo : 
 
 `git clone https://github.com/fdescollonges/ICPGuestbook.git`
 
@@ -114,6 +142,7 @@ Use the `redis-master-deployment.yaml` file to create a [deployment](https://kub
 
     Result: You'll see a single Redis master pod and the machine where the pod is running after the pod gets placed (may take up to thirty seconds).
 
+
 ### Create the Redis master service
 
 A Kubernetes [service](https://kubernetes.io/docs/concepts/services-networking/service/) is a named load balancer that proxies traffic to one or more pods. The services in a Kubernetes cluster are discoverable inside other pods via environment variables or DNS.
@@ -137,6 +166,7 @@ Services find the pods to load balance based on pod labels. The pod that you cre
     ```
 
     Result: All new pods will see the `redis-master` service running on the host (`$REDIS_MASTER_SERVICE_HOST` environment variable) at port `6379`, or running on `redis-master:6379`. After the service is created, the service proxy on each node is configured to set up a proxy on the specified port (in our example, that's port `6379`).
+
 
 
 ### Create the Redis slave pods
@@ -184,6 +214,8 @@ redis-slave-5db5dcfdfd-q6gfz    1/1     Running   0          5m48s
 
 Result: You see the single Redis master and two Redis slave pods.
 
+
+
 ### Create the Redis slave service
 
 Just like the master, we want to have a service to proxy connections to the read slaves. In this case, in addition to discovery, the Redis slave service provides transparent load balancing to clients.
@@ -207,6 +239,8 @@ Just like the master, we want to have a service to proxy connections to the read
     Result: The service is created with labels `app=redis` and `role=slave` to identify that the pods are running the Redis slaves.
 
 Tip: It is helpful to set labels on your services themselves--as we've done here--to make it easy to locate them later.
+
+
 
 ### Create the guestbook pods
 
@@ -247,6 +281,7 @@ This is a simple Go `net/http` ([negroni](https://github.com/codegangsta/negroni
 
     Result: You see a single Redis master, two Redis slaves, and three guestbook pods.
 
+
 ### Create the guestbook service
 
 Just like the others, we create a service to group the guestbook pods but this time, to make the guestbook front end externally visible, we specify `"type": "NodePort"`.
@@ -271,17 +306,20 @@ Just like the others, we create a service to group the guestbook pods but this t
 
     Result: The service is created with label `app=guestbook`.
 
+
 ### Create Watson Tone Analyzer on IBM Cloud
 
 Watson Tone Analyzer detects the tone from the words that users enter into the Guestbook app. The tone is converted to the corresponding emoticons.
 
-1. **If not done in previous lab**, install the IBM Cloud (ibmcloud) [command line interface](https://console.bluemix.net/docs/cli/reference/bluemix_cli/get_started.html#getting-started) to access IBM Cloud public on your virtual server :
+1. **If not done**, install the IBM Cloud (ibmcloud) - See at the beginning **Prerequisites**.
 
-      `curl -sL https://ibm.biz/idt-installer | bash`
+2. Log in to the IBM Cloud CLI  using your own IBM ID:
 
-2. Log in to the IBM Cloud CLI  using your own IBM ID created in preparation lab :[https://github.com/fdescollonges/ContainerWkshp/blob/master/1-PrepareLab.md](https://github.com/fdescollonges/ContainerWkshp/blob/master/1-PrepareLab.md)
+   ```
+   ibmcloud login -a cloud.ibm.com -r eu-gb
+   ibmcloud target -g default
+   ```
 
-   `ibmcloud login -a cloud.ibm.com -r eu-gb -g default`
 
   ```bash
 # ibmcloud login
@@ -410,7 +448,7 @@ And the configmap:
 
 
 
-4. Deploy the analyzer application to ICP
+4. Deploy the analyzer application to OpenShift Cluster
 
 - Open the `analyzer-deployment.yaml` and have a look at the  env section of the file :
 
@@ -503,6 +541,8 @@ VCAP_SERVICES_TONE_ANALYZER_SERVICE_API=https://gateway.watsonplatform.net/tone-
 
 - Exit the pod shell (using `exit`)
 
+
+
 ### View the guestbook
 
 You can now play with the guestbook that you just created by opening it in a browser.
@@ -567,12 +607,16 @@ deployment.apps "redis-slave" deleted
 service "redis-slave" deleted
 ```
 
+
+
+
+
 ## ANNEXE
 
 Challenge : Deploy the Hybrid application using the following architecture :
 
+
+
 ![1553853690110](images/1553853690110.png)
 
-
-
-# IBM Hybrid Cloud Workshop
+# 
