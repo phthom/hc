@@ -1,4 +1,4 @@
-## IBM Hybrid Cloud Workshop
+## Hybrid Cloud Lab
 
 ## Guestbook Hybrid Deployment
 
@@ -121,7 +121,7 @@ Use the `redis-master-deployment.yaml` file to create a [deployment](https://kub
     deployment.apps/redis-master created
     ```
 
-2. To verify that the redis-master controller is up, list the deployments you created in the cluster with the `kubectl get deployment` command (if you don't specify a `--namespace`, the `default` namespace will be used. The same below):
+2. To verify that the redis-master controller is up, list the deployments you created in the cluster with the `kubectl get deployment` :
 
     ```bash
     root@iccws101:~/ICPGuestbook# kubectl get deployment
