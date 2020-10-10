@@ -1,0 +1,282 @@
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: ham-sample-gbapp
+spec:
+  componentKinds:
+  - group: core.hybridapp.io
+    kind: Deployable
+  selector:
+    matchLabels:
+      ham-sample-app: guestbook
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: deployment-guestbook-frontend
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        annotations:
+        name: frontend
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: guestbook
+            tier: frontend
+        strategy:
+          rollingUpdate:
+            maxSurge: 25%
+            maxUnavailable: 25%
+          type: RollingUpdate
+        template:
+          metadata:
+            creationTimestamp: null
+            labels:
+              app: guestbook
+              tier: frontend
+          spec:
+            containers:
+            - env:
+              - name: GET_HOSTS_FROM
+                value: dns
+              image: gcr.io/google-samples/gb-frontend:v4
+              imagePullPolicy: IfNotPresent
+              name: php-redis
+              ports:
+              - containerPort: 80
+                protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: service-guestbook-frontend
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          app: guestbook
+          ham-sample-app: guestbook
+          tier: frontend
+        name: frontend
+      spec:
+        ports:
+        - port: 80
+        selector:
+          app: guestbook
+          tier: frontend
+        type: NodePort
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: ham-sample-guestbook
+spec:
+  clusters:
+  - name: toronto
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: deployment-guestbook-redis-master
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: redis-master
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: redis
+            role: master
+            tier: backend
+        strategy:
+          rollingUpdate:
+            maxSurge: 25%
+            maxUnavailable: 25%
+          type: RollingUpdate
+        template:
+          metadata:
+            labels:
+              app: redis
+              role: master
+              tier: backend
+          spec:
+            containers:
+            - image: k8s.gcr.io/redis:e2e
+              imagePullPolicy: IfNotPresent
+              name: master
+              ports:
+              - containerPort: 6379
+                protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+            dnsPolicy: ClusterFirst
+            restartPolicy: Always
+            schedulerName: default-scheduler
+            securityContext: {}
+            terminationGracePeriodSeconds: 30
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: service-guestbook-redis-master
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          app: redis
+          role: master
+          tier: backend
+        name: redis-master
+      spec:
+        ports:
+        - port: 6379
+          targetPort: 6379
+        selector:
+          app: redis
+          role: master
+          tier: backend
+        type: ClusterIP
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: deployment-guestbook-redis-slave
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        labels:
+          ham-sample-app: guestbook
+        name: redis-slave
+      spec:
+        progressDeadlineSeconds: 600
+        replicas: 2
+        revisionHistoryLimit: 10
+        selector:
+          matchLabels:
+            app: redis
+            role: slave
+            tier: backend
+        strategy:
+          rollingUpdate:
+            maxSurge: 25%
+            maxUnavailable: 25%
+          type: RollingUpdate
+        template:
+          metadata:
+            creationTimestamp: null
+            labels:
+              app: redis
+              role: slave
+              tier: backend
+          spec:
+            containers:
+            - env:
+              - name: GET_HOSTS_FROM
+                value: dns
+              image: gcr.io/google_samples/gb-redisslave:v1
+              imagePullPolicy: IfNotPresent
+              name: slave
+              ports:
+              - containerPort: 6379
+                protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+            dnsPolicy: ClusterFirst
+            restartPolicy: Always
+            schedulerName: default-scheduler
+            securityContext: {}
+            terminationGracePeriodSeconds: 30
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
+---
+apiVersion: core.hybridapp.io/v1alpha1
+kind: Deployable
+metadata:
+  labels:
+    ham-sample-app: guestbook
+  name: service-guestbook-redis-slave
+spec:
+  hybridtemplates:
+  - deployerType: kubernetes
+    template:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          app: redis
+          ham-sample-app: guestbook
+          role: slave
+          tier: backend
+        name: redis-slave
+      spec:
+        ports:
+        - port: 6379
+          targetPort: 6379
+        selector:
+          app: redis
+          role: slave
+          tier: backend
+        type: ClusterIP
+  placement:
+    placementRef:
+      name: ham-sample-guestbook
