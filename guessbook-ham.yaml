@@ -97,8 +97,10 @@ kind: PlacementRule
 metadata:
   name: ham-sample-guestbook
 spec:
-  clusters:
-  - name: toronto
+  clusterReplicas: 1
+  clusterLabels:
+    matchLabels:  
+      environment: QA
 ---
 apiVersion: core.hybridapp.io/v1alpha1
 kind: Deployable
